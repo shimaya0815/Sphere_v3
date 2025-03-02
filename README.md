@@ -4,7 +4,7 @@ Sphereは事業所の業務を効率化する総合プラットフォームで�
 
 ## 主要機能
 
-- **事業所管理**: 複数事業所の管理、メンバー招待、権限設定
+- **会社管理**: 会社単位でのデータ分離、メンバー招待、権限設定
 - **タスク管理**: タスクの作成、割り当て、進捗管理、ドラッグ＆ドロップでの並び替え
 - **クライアント管理**: クライアント情報の一元管理、契約管理、決算期設定
 - **時間管理**: タスクの作業時間の記録、自動集計、レポート作成
@@ -20,6 +20,13 @@ Sphereは事業所の業務を効率化する総合プラットフォームで�
   - React Hook Form
   - TailwindCSS + DaisyUI
   - Socket.IO Client
+  - Axios
+
+- **バックエンド**
+  - Node.js + Express
+  - Sequelize ORM
+  - JWT認証
+  - PostgreSQL
 
 - **開発環境**
   - Vite
@@ -31,37 +38,55 @@ Sphereは事業所の業務を効率化する総合プラットフォームで�
 
 ### 前提条件
 
-- Node.js (v18以上)
 - Docker Desktop
 
-### インストール
+### Dockerを使用したセットアップ（推奨）
 
 ```bash
 # リポジトリをクローン
 git clone https://github.com/shimaya0815/Sphere_v3.git
 cd Sphere_v3
 
-# 依存パッケージをインストール
-npm install
-
-# 開発サーバーを起動
-npm run dev
-```
-
-### Dockerを使用する場合
-
-```bash
-# Dockerコンテナを起動
+# Dockerコンテナを起動（フロントエンド、バックエンド、データベース全て）
 docker compose up -d
 
 # コンテナを停止
 docker compose down
 ```
 
+### 手動セットアップ（個別に起動する場合）
+
+```bash
+# リポジトリをクローン
+git clone https://github.com/shimaya0815/Sphere_v3.git
+cd Sphere_v3
+
+# フロントエンド
+npm install
+npm run dev
+
+# バックエンド
+cd server
+npm install
+npm run dev
+
+# データベース（PostgreSQLが必要）
+# .envファイルでデータベース接続設定を行う
+```
+
+## アクセス方法
+
+- フロントエンド: http://localhost:3000
+- バックエンドAPI: http://localhost:4000/api
+- データベース: PostgreSQL (localhost:5432)
+  - ユーザー: postgres
+  - パスワード: postgres
+  - データベース名: sphere
+
 ## 開発コマンド
 
 ```bash
-# 開発サーバーを起動
+# フロントエンド開発サーバーを起動
 npm run dev
 
 # 型チェック
@@ -72,41 +97,61 @@ npm run lint
 
 # ビルド
 npm run build
-
-# ビルドしたアプリをプレビュー
-npm run preview
 ```
+
+## アーキテクチャと実装の特徴
+
+### 会社単位のアクセス制御
+
+- 一社一サイト型のアーキテクチャを採用
+- 会社IDに基づくデータ分離により、他社のデータにアクセスできない設計
+- 招待ベースのユーザー登録システム（ビジネスコード + 招待コード）
+
+### 認証・認可
+
+- JWTベースの認証
+- ロールベースのアクセス制御（admin, manager, user）
+- 安全なパスワード管理（bcryptによるハッシュ化）
+
+### データベース設計
+
+- PostgreSQLによるリレーショナルデータベース
+- Sequelize ORMによるモデル管理
+- トランザクション処理によるデータ整合性の確保
 
 ## プロジェクト構成
 
 ```
 Sphere_v3/
 ├── public/              # 静的ファイル
-├── src/                 # ソースコード
-│   ├── api/             # API関連
-│   ├── components/      # コンポーネント
-│   │   ├── auth/        # 認証関連コンポーネント
-│   │   ├── common/      # 共通コンポーネント
-│   │   └── layout/      # レイアウトコンポーネント
-│   ├── context/         # コンテキスト
-│   ├── hooks/           # カスタムフック
+├── src/                 # フロントエンドソースコード
+│   ├── api/             # API連携クライアント
+│   ├── components/      # UIコンポーネント
+│   ├── context/         # Reactコンテキスト
 │   ├── pages/           # ページコンポーネント
-│   │   ├── auth/        # 認証関連ページ
-│   │   ├── business/    # 事業所管理ページ
-│   │   ├── chat/        # チャットページ
-│   │   ├── clients/     # クライアント管理ページ
-│   │   ├── tasks/       # タスク管理ページ
-│   │   ├── time/        # 時間管理ページ
-│   │   └── wiki/        # Wikiページ
-│   └── utils/           # ユーティリティ
-├── .eslintrc.js         # ESLint設定
+│   └── utils/           # ユーティリティ関数
+├── server/              # バックエンドソースコード
+│   ├── src/             # サーバーコード
+│   │   ├── config/      # 設定ファイル
+│   │   ├── controllers/ # APIコントローラー
+│   │   ├── middleware/  # ミドルウェア
+│   │   ├── models/      # データモデル
+│   │   ├── routes/      # APIルート
+│   │   └── utils/       # ユーティリティ関数
+│   └── package.json     # バックエンド依存関係
 ├── docker-compose.yml   # Docker Compose設定
-├── Dockerfile           # Docker設定
-├── index.html           # エントリーポイント
-├── package.json         # パッケージ設定
-├── tsconfig.json        # TypeScript設定
-└── vite.config.ts       # Vite設定
+├── Dockerfile.frontend  # フロントエンドのDockerfile
+├── package.json         # フロントエンド依存関係
+└── tsconfig.json        # TypeScript設定
 ```
+
+## 今後の開発予定
+
+- タスク管理機能の実装
+- クライアント管理機能の実装
+- チャットシステムの実装
+- Wikiシステムの実装
+- データ分析ダッシュボードの実装
 
 ## ライセンス
 
