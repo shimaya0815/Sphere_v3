@@ -11,7 +11,7 @@ export class Invitation extends Model {
     defaultValue: DataType.UUIDV4,
     primaryKey: true
   })
-  id!: string;
+  declare id: string;
 
   @Column({
     type: DataType.STRING,
@@ -19,7 +19,7 @@ export class Invitation extends Model {
     unique: true,
     field: 'invitation_code'
   })
-  invitationCode!: string;
+  declare invitationCode: string;
 
   @Column({
     type: DataType.STRING,
@@ -28,28 +28,28 @@ export class Invitation extends Model {
       isEmail: true
     }
   })
-  email!: string;
+  declare email: string;
 
   @Column({
     type: DataType.ENUM('admin', 'manager', 'user'),
     allowNull: false,
     defaultValue: 'user'
   })
-  role!: 'admin' | 'manager' | 'user';
+  declare role: 'admin' | 'manager' | 'user';
 
   @Column({
     type: DataType.BOOLEAN,
     allowNull: false,
     defaultValue: false
   })
-  used!: boolean;
+  declare used: boolean;
 
   @Column({
     type: DataType.DATE,
     allowNull: true,
     field: 'expires_at'
   })
-  expiresAt!: Date | null;
+  declare expiresAt: Date | null;
 
   @ForeignKey(() => Business)
   @Column({
@@ -57,10 +57,10 @@ export class Invitation extends Model {
     allowNull: false,
     field: 'business_id'
   })
-  businessId!: string;
+  declare businessId: string;
 
   @BelongsTo(() => Business)
-  business!: Business;
+  declare business: Business;
 
   // 招待コードを自動生成
   @BeforeCreate

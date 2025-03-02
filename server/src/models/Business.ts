@@ -11,13 +11,13 @@ export class Business extends Model {
     defaultValue: DataType.UUIDV4,
     primaryKey: true
   })
-  id!: string;
+  declare id: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false
   })
-  name!: string;
+  declare name: string;
 
   @Column({
     type: DataType.STRING,
@@ -25,17 +25,17 @@ export class Business extends Model {
     unique: true,
     field: 'business_code'
   })
-  businessCode!: string;
+  declare businessCode: string;
 
   @Column({
     type: DataType.UUID,
     allowNull: false,
     field: 'owner_id'
   })
-  ownerId!: string;
+  declare ownerId: string;
 
   @HasMany(() => User)
-  users!: User[];
+  declare users: User[];
 
   // ビジネスコードを自動生成
   @BeforeCreate

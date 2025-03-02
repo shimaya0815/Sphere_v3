@@ -11,13 +11,13 @@ export class User extends Model {
     defaultValue: DataType.UUIDV4,
     primaryKey: true
   })
-  id!: string;
+  declare id: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false
   })
-  username!: string;
+  declare username: string;
 
   @Column({
     type: DataType.STRING,
@@ -27,20 +27,20 @@ export class User extends Model {
       isEmail: true
     }
   })
-  email!: string;
+  declare email: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false
   })
-  password!: string;
+  declare password: string;
 
   @Column({
     type: DataType.ENUM('admin', 'manager', 'user'),
     allowNull: false,
     defaultValue: 'user'
   })
-  role!: 'admin' | 'manager' | 'user';
+  declare role: 'admin' | 'manager' | 'user';
 
   @ForeignKey(() => Business)
   @Column({
@@ -48,10 +48,10 @@ export class User extends Model {
     allowNull: false,
     field: 'business_id'
   })
-  businessId!: string;
+  declare businessId: string;
 
   @BelongsTo(() => Business)
-  business!: Business;
+  declare business: Business;
 
   // パスワードのハッシュ化
   @BeforeCreate

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { User } from '../models/User';
+import { Business } from '../models/Business';
 import { Invitation } from '../models/Invitation';
 import sequelize from '../config/database';
 
@@ -51,8 +52,8 @@ export const updateUserRole = async (req: Request, res: Response) => {
     }
 
     // ビジネスオーナーの権限は変更できない
-    const business = await targetUser.getBusiness();
-    if (business.ownerId === targetUser.id) {
+    const business = await Business.findByPk(targetUser.businessId);
+    if (business && business.ownerId === targetUser.id) {
       return res.status(403).json({ message: 'ビジネスオーナーの権限は変更できません' });
     }
 
@@ -106,8 +107,8 @@ export const removeUser = async (req: Request, res: Response) => {
     }
 
     // ビジネスオーナーは削除できない
-    const business = await targetUser.getBusiness();
-    if (business.ownerId === targetUser.id) {
+    const business = await Business.findByPk(targetUser.businessId);
+    if (business && business.ownerId === targetUser.id) {
       return res.status(403).json({ message: 'ビジネスオーナーを削除することはできません' });
     }
 
