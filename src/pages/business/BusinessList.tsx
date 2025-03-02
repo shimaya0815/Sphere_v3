@@ -1,66 +1,64 @@
 import { FC, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiPlus, FiEdit2, FiTrash2, FiUsers } from 'react-icons/fi';
-import { useBusiness } from '@/context/BusinessContext';
+import { FiEdit2, FiUserPlus, FiUsers } from 'react-icons/fi';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
 
-const BusinessList: FC = () => {
-  const { businesses, currentBusiness, loading, error, switchBusiness, deleteBusiness } = useBusiness();
-  const { user } = useAuth();
+const BusinessManagement: FC = () => {
+  const { business, user, loading, inviteUser } = useAuth();
   const navigate = useNavigate();
-  const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(null);
+  const [inviteMode, setInviteMode] = useState(false);
+  const [inviteForm, setInviteForm] = useState({ email: '', role: 'user' as 'admin' | 'manager' | 'user' });
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
 
-  // ビジネス切り替え
-  const handleSwitchBusiness = (id: string) => {
-    switchBusiness(id);
+  // 会社情報編集ページへ遷移
+  const handleEditBusiness = () => {
+    navigate('/business/edit');
   };
 
-  // ビジネス編集ページへ遷移
-  const handleEditBusiness = (id: string) => {
-    navigate(`/business/${id}/edit`);
+  // ユーザー管理ページへ遷移
+  const handleManageUsers = () => {
+    navigate('/business/users');
   };
 
-  // ビジネス削除の確認
-  const handleDeleteConfirmation = (id: string) => {
-    setDeleteConfirmation(id);
-  };
-
-  // ビジネス削除の実行
-  const handleDeleteBusiness = async (id: string) => {
+  // メンバー招待処理
+  const handleInviteUser = async () => {
     try {
-      await deleteBusiness(id);
-      setDeleteConfirmation(null);
+      setInviteLoading(true);
+      setInviteError(null);
+      
+      if (!inviteForm.email) {
+        setInviteError('メールアドレスを入力してください');
+        return;
+      }
+      
+      const code = await inviteUser(inviteForm.email, inviteForm.role);
+      setInviteCode(code);
+      setInviteForm({ email: '', role: 'user' });
     } catch (error) {
-      console.error('Failed to delete business:', error);
+      setInviteError('招待処理に失敗しました');
+      console.error('Failed to invite user:', error);
+    } finally {
+      setInviteLoading(false);
     }
   };
 
-  // ビジネスメンバー管理ページへ遷移
-  const handleManageMembers = (id: string) => {
-    navigate(`/business/${id}/members`);
-  };
-
-  // 新規ビジネス作成ページへ遷移
-  const handleCreateBusiness = () => {
-    navigate('/business/new');
-  };
-
-  // ユーザーのビジネスでの役割を取得
-  const getUserRoleInBusiness = (businessId: string) => {
-    const business = businesses.find(b => b.id === businessId);
-    if (!business || !user) return null;
-    
-    const member = business.members.find(m => m.userId === user.id);
-    return member?.role;
+  // 招待フォームをリセット
+  const resetInviteForm = () => {
+    setInviteMode(false);
+    setInviteCode(null);
+    setInviteError(null);
+    setInviteForm({ email: '', role: 'user' });
   };
 
   if (loading) return <LoadingSpinner />;
 
-  if (error) {
+  if (!business) {
     return (
       <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg">
-        エラーが発生しました: {error}
+        会社情報が見つかりません。
       </div>
     );
   }
@@ -68,129 +66,148 @@ const BusinessList: FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">事業所一覧</h1>
-        <button
-          onClick={handleCreateBusiness}
-          className="btn btn-primary flex items-center"
-        >
-          <FiPlus className="mr-2" /> 新規事業所を作成
-        </button>
+        <h1 className="text-2xl font-bold">会社情報</h1>
+        {user?.role === 'admin' && (
+          <button
+            onClick={() => setInviteMode(true)}
+            className="btn btn-primary flex items-center"
+          >
+            <FiUserPlus className="mr-2" /> メンバーを招待
+          </button>
+        )}
       </div>
 
-      {businesses.length === 0 ? (
-        <div className="bg-white p-8 rounded-lg shadow-md text-center">
-          <p className="text-gray-600 mb-4">事業所がまだ登録されていません。</p>
-          <button
-            onClick={handleCreateBusiness}
-            className="btn btn-primary"
-          >
-            最初の事業所を作成する
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {businesses.map(business => {
-            const isCurrentBusiness = currentBusiness?.id === business.id;
-            const userRole = getUserRoleInBusiness(business.id);
-            const isOwnerOrAdmin = userRole === 'owner' || userRole === 'admin';
+      {/* 会社情報カード */}
+      <div className="bg-white rounded-lg shadow-md overflow-hidden mb-8">
+        <div className="p-6">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">{business.name}</h2>
+              <p className="text-sm text-gray-600">
+                ビジネスコード: <span className="font-mono">{business.businessCode}</span>
+              </p>
+            </div>
             
-            return (
-              <div
-                key={business.id}
-                className={`bg-white rounded-lg shadow-md overflow-hidden ${
-                  isCurrentBusiness ? 'border-2 border-blue-500' : ''
-                }`}
+            {user?.role === 'admin' && (
+              <button
+                onClick={handleEditBusiness}
+                className="btn btn-sm btn-outline btn-info flex items-center"
               >
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <h2 className="text-xl font-semibold text-gray-900">{business.name}</h2>
-                    {isCurrentBusiness && (
-                      <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                        現在選択中
-                      </span>
-                    )}
-                  </div>
-                  
-                  <p className="text-sm text-gray-600 mb-2">
-                    事業所ID: {business.businessId}
-                  </p>
-                  
-                  <p className="text-sm text-gray-600 mb-4">
-                    メンバー数: {business.members.length}人
-                  </p>
-                  
-                  <p className="text-xs text-gray-500 mb-6">
-                    作成日: {new Date(business.createdAt).toLocaleDateString('ja-JP')}
-                  </p>
+                <FiEdit2 className="mr-2" /> 編集
+              </button>
+            )}
+          </div>
+          
+          <div className="flex flex-col md:flex-row md:items-center gap-4 mt-4">
+            <div className="flex-1">
+              <p className="text-sm text-gray-500">
+                作成日: {new Date(business.createdAt).toLocaleDateString('ja-JP')}
+              </p>
+            </div>
+            
+            {user?.role === 'admin' && (
+              <button
+                onClick={handleManageUsers}
+                className="btn btn-outline btn-primary flex items-center"
+              >
+                <FiUsers className="mr-2" /> ユーザー管理
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      {/* 招待フォーム */}
+      {inviteMode && !inviteCode && (
+        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+          <h2 className="text-lg font-semibold mb-4">新しいメンバーを招待</h2>
+          
+          {inviteError && (
+            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
+              {inviteError}
+            </div>
+          )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label htmlFor="email" className="block text-gray-700 font-medium mb-2">
+                メールアドレス <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="email"
+                type="email"
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300"
+                placeholder="例: user@example.com"
+                value={inviteForm.email}
+                onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                required
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="role" className="block text-gray-700 font-medium mb-2">
+                権限 <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="role"
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300"
+                value={inviteForm.role}
+                onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value as 'admin' | 'manager' | 'user' })}
+              >
+                <option value="user">一般ユーザー</option>
+                <option value="manager">マネージャー</option>
+                <option value="admin">管理者</option>
+              </select>
+            </div>
+          </div>
 
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    {!isCurrentBusiness && (
-                      <button
-                        onClick={() => handleSwitchBusiness(business.id)}
-                        className="btn btn-sm btn-outline btn-primary flex-1"
-                      >
-                        この事業所に切り替え
-                      </button>
-                    )}
-                    
-                    {isOwnerOrAdmin && (
-                      <>
-                        <button
-                          onClick={() => handleEditBusiness(business.id)}
-                          className="btn btn-sm btn-outline btn-info flex items-center justify-center"
-                        >
-                          <FiEdit2 />
-                        </button>
-                        
-                        <button
-                          onClick={() => handleManageMembers(business.id)}
-                          className="btn btn-sm btn-outline btn-success flex items-center justify-center"
-                        >
-                          <FiUsers />
-                        </button>
-                        
-                        {userRole === 'owner' && (
-                          <button
-                            onClick={() => handleDeleteConfirmation(business.id)}
-                            className="btn btn-sm btn-outline btn-error flex items-center justify-center"
-                          >
-                            <FiTrash2 />
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-                
-                {/* 削除確認ダイアログ */}
-                {deleteConfirmation === business.id && (
-                  <div className="p-4 bg-red-50 border-t border-red-200">
-                    <p className="text-red-700 text-sm mb-3">
-                      この事業所を削除しますか？この操作は元に戻せません。
-                    </p>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleDeleteBusiness(business.id)}
-                        className="btn btn-sm btn-error flex-1"
-                      >
-                        削除する
-                      </button>
-                      <button
-                        onClick={() => setDeleteConfirmation(null)}
-                        className="btn btn-sm btn-outline flex-1"
-                      >
-                        キャンセル
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          <div className="flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={resetInviteForm}
+              className="btn btn-outline"
+              disabled={inviteLoading}
+            >
+              キャンセル
+            </button>
+            <button
+              type="button"
+              onClick={handleInviteUser}
+              className="btn btn-primary"
+              disabled={inviteLoading}
+            >
+              {inviteLoading ? '処理中...' : '招待する'}
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* 招待コード表示 */}
+      {inviteCode && (
+        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+          <h2 className="text-lg font-semibold mb-4">招待コードが発行されました</h2>
+          
+          <div className="bg-gray-50 p-4 rounded-lg mb-6">
+            <p className="text-sm text-gray-600 mb-2">以下の情報を招待するメンバーに共有してください：</p>
+            <div className="bg-white p-4 rounded border border-gray-300 font-mono">
+              <p className="mb-2">ビジネスコード: <strong>{business.businessCode}</strong></p>
+              <p>招待コード: <strong>{inviteCode}</strong></p>
+            </div>
+          </div>
+          
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={resetInviteForm}
+              className="btn btn-primary"
+            >
+              完了
+            </button>
+          </div>
         </div>
       )}
     </div>
   );
 };
 
-export default BusinessList;
+export default BusinessManagement;

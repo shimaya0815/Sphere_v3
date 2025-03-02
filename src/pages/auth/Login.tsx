@@ -13,6 +13,9 @@ const loginSchema = z.object({
   password: z
     .string()
     .min(1, 'パスワードを入力してください'),
+  businessCode: z
+    .string()
+    .min(1, 'ビジネスコードを入力してください'),
 });
 
 // フォームの型定義
@@ -32,6 +35,7 @@ const Login: FC = () => {
     defaultValues: {
       email: '',
       password: '',
+      businessCode: '',
     },
   });
 
@@ -39,10 +43,10 @@ const Login: FC = () => {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setLoginError(null);
-      await login(data.email, data.password);
+      await login(data.email, data.password, data.businessCode);
     } catch (error) {
       console.error('Login error:', error);
-      setLoginError('メールアドレスまたはパスワードが正しくありません');
+      setLoginError('ログインに失敗しました。メールアドレス、パスワード、ビジネスコードを確認してください');
     }
   };
 
@@ -57,6 +61,25 @@ const Login: FC = () => {
       )}
       
       <form onSubmit={handleSubmit(onSubmit)}>
+        {/* ビジネスコード */}
+        <div className="mb-4">
+          <label htmlFor="businessCode" className="block text-gray-700 font-medium mb-2">
+            ビジネスコード
+          </label>
+          <input
+            id="businessCode"
+            type="text"
+            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+              errors.businessCode ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500 border-gray-300'
+            }`}
+            placeholder="例: BUSINESS123"
+            {...register('businessCode')}
+          />
+          {errors.businessCode && (
+            <p className="mt-1 text-red-500 text-sm">{errors.businessCode.message}</p>
+          )}
+        </div>
+        
         {/* メールアドレス */}
         <div className="mb-4">
           <label htmlFor="email" className="block text-gray-700 font-medium mb-2">
@@ -68,6 +91,7 @@ const Login: FC = () => {
             className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
               errors.email ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500 border-gray-300'
             }`}
+            placeholder="例: user@example.com"
             {...register('email')}
           />
           {errors.email && (
@@ -124,7 +148,7 @@ const Login: FC = () => {
         <button
           type="button"
           className="w-full bg-gray-100 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors"
-          onClick={() => onSubmit({ email: 'demo@example.com', password: 'password' })}
+          onClick={() => onSubmit({ email: 'demo@example.com', password: 'password', businessCode: 'DEMO123' })}
           disabled={isSubmitting}
         >
           デモアカウントでログイン
