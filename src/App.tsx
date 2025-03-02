@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
+import { BusinessProvider } from '@/context/BusinessContext';
 import Layout from '@/components/layout/Layout';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
@@ -19,55 +20,70 @@ const ChatHome = lazy(() => import('@/pages/chat/ChatHome'));
 const Wiki = lazy(() => import('@/pages/wiki/Wiki'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
+// Business pages
+const BusinessList = lazy(() => import('@/pages/business/BusinessList'));
+const BusinessForm = lazy(() => import('@/pages/business/BusinessForm'));
+const BusinessMembers = lazy(() => import('@/pages/business/BusinessMembers'));
+
 const App = () => {
   return (
     <AuthProvider>
-      <Suspense fallback={<LoadingSpinner fullScreen />}>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Home />} />
-            <Route path="login" element={<Login />} />
-            <Route path="signup" element={<SignUp />} />
+      <BusinessProvider>
+        <Suspense fallback={<LoadingSpinner fullScreen />}>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Home />} />
+              <Route path="login" element={<Login />} />
+              <Route path="signup" element={<SignUp />} />
 
-            {/* Protected routes */}
-            <Route element={<PrivateRoute />}>
-              <Route path="dashboard" element={<Dashboard />} />
-              
-              {/* Tasks routes */}
-              <Route path="tasks">
-                <Route index element={<TaskList />} />
-                <Route path="new" element={<TaskDetail />} />
-                <Route path=":taskId" element={<TaskDetail />} />
+              {/* Protected routes */}
+              <Route element={<PrivateRoute />}>
+                <Route path="dashboard" element={<Dashboard />} />
+                
+                {/* Business routes */}
+                <Route path="business">
+                  <Route index element={<BusinessList />} />
+                  <Route path="new" element={<BusinessForm />} />
+                  <Route path=":businessId/edit" element={<BusinessForm />} />
+                  <Route path=":businessId/members" element={<BusinessMembers />} />
+                </Route>
+                
+                {/* Tasks routes */}
+                <Route path="tasks">
+                  <Route index element={<TaskList />} />
+                  <Route path="new" element={<TaskDetail />} />
+                  <Route path=":taskId" element={<TaskDetail />} />
+                </Route>
+                
+                {/* Clients routes */}
+                <Route path="clients">
+                  <Route index element={<ClientList />} />
+                  <Route path="new" element={<ClientDetail />} />
+                  <Route path=":clientId" element={<ClientDetail />} />
+                  <Route path=":clientId/edit" element={<ClientDetail />} />
+                </Route>
+                
+                {/* Time management routes */}
+                <Route path="time" element={<TimeManagement />} />
+                
+                {/* Chat routes */}
+                <Route path="chat" element={<ChatHome />} />
+                
+                {/* Wiki routes */}
+                <Route path="wiki">
+                  <Route index element={<Wiki />} />
+                  <Route path=":pageId" element={<Wiki key={window.location.pathname} />} />
+                </Route>
               </Route>
-              
-              {/* Clients routes */}
-              <Route path="clients">
-                <Route index element={<ClientList />} />
-                <Route path="new" element={<ClientDetail />} />
-                <Route path=":clientId" element={<ClientDetail />} />
-                <Route path=":clientId/edit" element={<ClientDetail />} />
-              </Route>
-              
-              {/* Time management routes */}
-              <Route path="time" element={<TimeManagement />} />
-              
-              {/* Chat routes */}
-              <Route path="chat" element={<ChatHome />} />
-              
-              {/* Wiki routes */}
-              <Route path="wiki">
-                <Route index element={<Wiki />} />
-                <Route path=":pageId" element={<Wiki key={window.location.pathname} />} />
-              </Route>
+
+              {/* 404 route */}
+              <Route path="404" element={<NotFound />} />
+              <Route path="*" element={<Navigate to="/404" replace />} />
             </Route>
-
-            {/* 404 route */}
-            <Route path="404" element={<NotFound />} />
-            <Route path="*" element={<Navigate to="/404" replace />} />
-          </Route>
-        </Routes>
-      </Suspense>
+          </Routes>
+        </Suspense>
+      </BusinessProvider>
     </AuthProvider>
   );
 };

@@ -9,9 +9,12 @@ import {
   FiFileText,
   FiSettings,
   FiHelpCircle,
-  FiPieChart
+  FiPieChart,
+  FiGrid,
+  FiUserPlus
 } from 'react-icons/fi';
 import { useAuth } from '@/context/AuthContext';
+import { useBusiness } from '@/context/BusinessContext';
 
 // サイドバーナビゲーションアイテムの型定義
 interface NavItem {
@@ -23,6 +26,7 @@ interface NavItem {
 
 const Sidebar: FC = () => {
   const { user } = useAuth();
+  const { currentBusiness } = useBusiness();
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
 
   // ナビゲーションアイテムのリスト
@@ -31,6 +35,28 @@ const Sidebar: FC = () => {
       path: '/dashboard',
       label: 'ダッシュボード',
       icon: <FiHome className="w-5 h-5" />,
+    },
+    {
+      path: '/business',
+      label: '事業所管理',
+      icon: <FiGrid className="w-5 h-5" />,
+      submenu: [
+        {
+          path: '/business',
+          label: '事業所一覧',
+          icon: <FiGrid className="w-4 h-4" />,
+        },
+        {
+          path: '/business/new',
+          label: '新規事業所',
+          icon: <FiGrid className="w-4 h-4" />,
+        },
+        {
+          path: currentBusiness ? `/business/${currentBusiness.id}/members` : '/business',
+          label: 'メンバー管理',
+          icon: <FiUserPlus className="w-4 h-4" />,
+        }
+      ]
     },
     {
       path: '/tasks',
@@ -160,6 +186,23 @@ const Sidebar: FC = () => {
               <p className="text-xs text-gray-500 truncate">{user?.email || 'email@example.com'}</p>
             </div>
           </div>
+          
+          {/* 現在の事業所 */}
+          {currentBusiness && (
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="h-8 w-8 rounded-md bg-blue-50 flex items-center justify-center">
+                    <FiGrid className="w-4 h-4 text-blue-600" />
+                  </div>
+                </div>
+                <div className="ml-3">
+                  <p className="text-xs text-gray-500">現在の事業所</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{currentBusiness.name}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* メインナビゲーション */}
